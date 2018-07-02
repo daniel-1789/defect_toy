@@ -1,0 +1,10 @@
+==== RESTART: /Users/dstack1776/Documents/GitHub/IndexedDB/rest_dstack.py ====
+ * Serving Flask app "rest_dstack" (lazy loading)
+ * Environment: production
+[31m   WARNING: Do not use the development server in a production environment.[0m
+[2m   Use a production WSGI server instead.[0m
+ * Debug mode: off
+ * Running on http://127.0.0.1:5002/ (Press CTRL+C to quit)
+127.0.0.1 - - [30/Jun/2018 20:40:14] "GET /prep/data.png HTTP/1.1" 200 -
+127.0.0.1 - - [30/Jun/2018 20:40:16] "GET /prep/data47.png HTTP/1.1" 200 -
+127.0.0.1 - - [30/Jun/2018 20:40:22] "GET /display/data47.png HTTP/1.1" 200 -

@@ -1,0 +1,125 @@
+﻿<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <link rel="stylesheet" type="text/css" href="index.css">
+
+    <title></title>
+    <script>
+        // Reference: http://msdn.microsoft.com/en-us/library/ie/hh772651(v=vs.85).aspx "Indexed Database API"
+        // Best Example: https://developer.mozilla.org/en-US/docs/IndexedDB/Using_IndexedDB
+        // Should know about objects: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Working_with_Objects
+        // forked from professorf/IndexedDB - added css, changed to defect DB example
+        var db; // your database
+
+        window.addEventListener("load", start);
+        function start() {
+            var request = indexedDB.open("dstackDB"); 
+            request.onupgradeneeded = createDB;
+            request.onsuccess = function (e) {
+                db = e.target.result;
+            }
+            request.onerror = function (e) {
+                db = null; // no database created
+            }
+
+            btnStore.addEventListener("click", storeDB);
+            btnList.addEventListener("click", listDB);
+            btnOne.addEventListener("click", getOne);
+            btnUpdate.addEventListener("click", updateDB);
+            btnDelete.addEventListener("click", deleteDB);
+        }
+
+        // function to create the database as well as the objectstore, indexed by defectid
+        function createDB(e) {
+            var db = e.target.result; // request.result            
+            var ostore = db.createObjectStore("defectlist", { keyPath: "defectid", autoIncrement: true }); // note this makes it an int
+            ostore.createIndex("idxDefect", "defect_summary");
+        }
+        
+        // store a new db entry
+        function storeDB(e) {
+            var ostore = db.transaction("defectlist", "readwrite").objectStore("defectlist"); // can omit readwrite if just reading
+            var rec= new Object();
+            rec.defect_summary = inDefectSummary.value;
+            rec.severity = inSev.value;
+            rec.defect_owner = inOwner.value;
+            rec.customer = inCustomer.value;
+            var now = new Date();
+            rec.last_update = (now.getMonth() + 1) + "/" + now.getDate() + "/" + now.getFullYear();
+            ostore.add(rec);
+            inDefectSummary.value = "";
+            inSev.value = "";
+            inOwner.value = "";
+            inCustomer.value = "";
+            listDB();
+        }
+
+        // list all the items in the db
+        function listDB(e) {
+            dvResults.innerHTML = "";
+            var ostore = db.transaction("defectlist").objectStore("defectlist");
+            ostore.openCursor().onsuccess = function (e) { // gets called for every record!
+                var cursor = e.target.result;
+                if (cursor != null) {
+                    dvResults.innerHTML += cursor.value.defectid + "," + cursor.value.defect_summary + "," + cursor.value.severity + "," + cursor.value.defect_owner + "," + cursor.value.customer + "," + cursor.value.last_update;
+                    dvResults.innerHTML += "<br />";
+                    cursor.continue();
+                }
+            }
+        }
+
+        // given an id, load a single defect
+        function getOne(e) {
+                db.transaction("defectlist").objectStore("defectlist").get(parseInt(inOne.value)).onsuccess = function (e) { // need to parseint on key
+                var cursor = e.target.result;
+                spID.innerHTML = cursor.defectid;
+                inDefectSummary.value = cursor.defect_summary;
+                inSev.value = cursor.severity;
+                inOwner.value = cursor.defect_owner;
+                inCustomer.value = cursor.customer;
+                spDate.innerHTML = cursor.last_update;
+            }
+        }
+
+        // with a defect being viewed one can go ahead and modify it, keeping the key the same
+        function updateDB(e) {
+            db.transaction("defectlist", "readwrite").objectStore("defectlist").get(parseInt(spID.innerHTML)).onsuccess = function (e) {
+                var cursor = e.target.result;
+                cursor.defect_summary = inDefectSummary.value;
+                cursor.severity = inSev.value;
+                cursor.defect_owner = inOwner.value;
+                cursor.customer = inCustomer.value;
+                db.transaction("defectlist", "readwrite").objectStore("defectlist").put(cursor);
+                listDB();
+            }
+        }
+
+        function deleteDB(e) { // This deletes a record, to delete the database you have to do so in the browser
+            db.transaction("defectlist", "readwrite").objectStore("defectlist").delete(parseInt(spID.innerHTML));
+            listDB();
+        }
+    </script>
+</head>
+<body>
+    <div class="sheet-boxed">
+    <h1>Mini Defect DB</h1>
+    <br />
+    Id: <span id="spID"></span><br />
+    Summary: <br /><input type="text" id="inDefectSummary" /><br /><br />
+    Severity: <br /><input type="text" id="inSev" /><br /><br />
+    Customer: <br /><input type="text" id="inCustomer" /><br /><br />
+    Owner: <br /><input type="text" id="inOwner" /><br /><br />
+    Date: <br /><span id="spDate"></span><br /><br />
+    <input type="button" id="btnStore" value="Store" />
+    <input type="button" id="btnUpdate" value="Update" />
+    <input type="button" id="btnDelete" value="Delete" />
+    </div>
+    <h1>Get Single Record</h1>
+    <input type="number" id="inOne" />
+    <input type="button" id="btnOne" value="Get Single" />    
+    <h1>Retrieve</h1>
+    <input type="button" id="btnList" value="Retrieve" />
+    <hr />
+    <div id="dvResults"></div>
+</body>
+</html>
